@@ -14,4 +14,16 @@
   - API routes: `GET/POST /api/bodies`, `GET/POST /api/exercises`, `GET/POST /api/workout-records`.
   - `GET /api/exercises?bodyId=<uuid>` and `GET /api/workout-records?exerciseId=<uuid>` for filtered queries.
   - Server actions in `actions.ts` now delegate to `src/lib/{body,exercise,workoutRecord}.ts`.
-  - Supabase SQL migration lives in `supabase/migrations/001_initial_schema.sql`.
+  - Supabase SQL migration lives in `supabase/migrations/001_initial_schema.sql`.
+- 2026-06-02: Implemented mobile-first RWD (primary target: mobile users).
+  - Viewport: `viewportFit: 'cover'` exported from `layout.tsx` for notched phones (iPhone safe-area).
+  - Safe-area insets: `.app-shell` uses `env(safe-area-inset-*)` for notched device support.
+  - Touch targets: all interactive elements (buttons, inputs, selects) are ≥ 44px (Apple/Google minimum).
+  - iOS zoom prevention: all inputs/selects use `font-size: 1rem` (16px) to prevent iOS auto-zoom on focus.
+  - `min-height: 100dvh` used on `.app-shell` to handle browser chrome on mobile.
+  - `touch-action: manipulation` on form elements removes the 300ms tap delay.
+  - Breakpoint strategy: mobile-first (base = mobile), desktop enhanced at `min-width: 480px / 520px / 600px / 640px`.
+  - Form layout: stacked (column) on mobile → side-by-side row at `min-width: 520px`.
+  - Set-config row: CSS Grid `1fr 1fr 1fr` on mobile → `1fr 1fr 1fr auto` at `min-width: 480px`.
+  - Buttons: full-width on mobile → `width: auto` at `min-width: 520px`.
+

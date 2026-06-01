@@ -36,17 +36,33 @@ npm run lint
 ## Directory Structure Overview
 - `src/app/`: Contains the Next.js App Router structure (`page.tsx`, `layout.tsx`, `globals.scss`).
   - `/`: Dashboard placeholder.
-  - `/workouts/new`: Form placeholder for new workout entry.
+  - `/workouts/new`: Workout entry form (body part, exercise, record).
+    - `page.tsx` — server component; fetches bodies & exercises
+    - `NewWorkoutForms.tsx` — client component; all three forms
+    - `NewWorkoutForms.module.scss` — form styles
+    - `actions.ts` — server actions delegating to lib functions
   - `/trends`: Chart/trends placeholder.
+  - `/api/bodies` — `GET` list / `POST` create body
+  - `/api/exercises` — `GET` list (optional `?bodyId`) / `POST` create (JSON or multipart+image)
+  - `/api/workout-records` — `GET` list (optional `?exerciseId`) / `POST` create
+- `src/lib/`: Server-side utility functions.
+  - `supabase.ts` — Supabase client
+  - `body.ts` — `createBody`, `listBodies`
+  - `exercise.ts` — `createExercise`, `listExercises`, `listExercisesByBody`
+  - `workoutRecord.ts` — `createWorkoutRecord`, `listWorkoutRecords`, `listWorkoutRecordsByExercise`
+- `src/types/workout.ts`: Shared TypeScript types (`Body`, `Exercise`, `SetConfig`, `WorkoutRecord`, `Create*` inputs).
+- `supabase/migrations/001_initial_schema.sql`: Initial DB schema (run in Supabase SQL editor).
 - `AGENTS.md` & `CLAUDE.md`: The source of truth for agent system prompts across different tools.
 - `memory.md`: An ongoing development memory log.
+
+## Workflow
+Checkout a feature branch from master, create commits while coding, and merge back using --no-ff which summarizes the work. You MUST keep commits small and topically complete.
 
 ## Development Conventions
 1. **Component Design:** Prioritize Server Components by default. Use Client Components only when browser state, effects, or events are required. Keep components reusable and isolated into separate files.
 2. **Styling:** Exclusively use `.scss` or `.module.scss` for styles. Do not introduce Tailwind. Use class instead of adding style props directly on elements.
 3. **Utilities:** Keep utility functions readable and place them in a dedicated folder like `src/lib/`.
 4. **Testing:** Write unit tests for new components and utility functions. After every code change, execute linting and tests to verify. Ensure E2E candidates (like Playwright) are evaluated for forms and charts.
-5. **Workflow:** Keep commits small and topically complete.
-6. **Memory Syncing:** Any new project rules, preferences, constraints, or findings MUST be continuously documented in `memory.md`. Categorize and update relevant sections as needed. Do not just log everything. Logs should go to changelog.md.
-7. **Quality:** Avoid unrelated refactoring. Preserve data shapes and focus on high readability over terse logic. Ensure charting tools are accessible, responsive, and testable.
-8. **Repository Structure**: After each feature or bug fix, update the repository structure to reflect the changes. The structure is recorded in the `Directory Structure Overview` section in AGENTS.md.
+5. **Memory Syncing:** Any new project rules, preferences, constraints, or findings MUST be continuously documented in `memory.md`. Categorize and update relevant sections as needed. Do not just log everything. Logs should go to changelog.md.
+6. **Quality:** Avoid unrelated refactoring. Preserve data shapes and focus on high readability over terse logic. Ensure charting tools are accessible, responsive, and testable.
+7. **Repository Structure**: After each feature or bug fix, update the repository structure to reflect the changes. The structure is recorded in the `Directory Structure Overview` section in AGENTS.md.

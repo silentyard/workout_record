@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { put } from '@vercel/blob';
 import { listBodies, createBody } from '@/lib/body';
 import { listExercisesByBody, listExercises, createExercise } from '@/lib/exercise';
 import { createWorkoutRecord } from '@/lib/workoutRecord';
@@ -32,11 +33,21 @@ export async function addBodyPart(formData: FormData) {
 export async function addExercise(formData: FormData) {
   const name = (formData.get('name') as string | null)?.trim();
   const body_id = (formData.get('bodyPartId') as string | null)?.trim();
+  const imageFile = formData.get('image') as File | null;
 
   if (!name || !body_id) return { error: 'Name and body part are required' };
 
   try {
-    await createExercise({ name, body_id });
+    let image_url: string | undefined;
+    if (imageFile && imageFile.size > 0) {
+      const blob = await put(`exercises/${body_id}/${name}`, imageFile, {
+        access: 'public',
+        contentType: imageFile.type,
+      });
+      image_url = blob.url;
+    }
+
+    await createExercise({ name, body_id, image_url });
     revalidatePath('/workouts/new');
     return { success: true };
   } catch (err) {

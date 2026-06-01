@@ -1,66 +1,71 @@
-"use server";
+'use server';
 
-import { getDb, saveDb } from "@/lib/db";
-import { BodyPart, Exercise, SetConfig, WorkoutRecord } from "@/types/workout";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from 'next/cache';
+import { listBodies, createBody } from '@/lib/body';
+import { listExercisesByBody, listExercises, createExercise } from '@/lib/exercise';
+import { createWorkoutRecord } from '@/lib/workoutRecord';
+import type { SetConfig } from '@/types/workout';
 
 export async function getBodyParts() {
-  const db = await getDb();
-  return db.bodyParts;
+  return listBodies();
 }
 
-export async function getExercises() {
-  const db = await getDb();
-  return db.exercises;
+export async function getExercises(bodyId?: string) {
+  if (bodyId) return listExercisesByBody(bodyId);
+  return listExercises();
 }
 
 export async function addBodyPart(formData: FormData) {
-  const name = formData.get("name") as string;
-  if (!name) return { error: "Name cannot be empty" };
+  const name = (formData.get('name') as string | null)?.trim();
+  if (!name) return { error: 'Name cannot be empty' };
 
-  const db = await getDb();
-  const newPart: BodyPart = { id: crypto.randomUUID(), name };
-  db.bodyParts.push(newPart);
-  await saveDb(db);
-
-  revalidatePath("/workouts/new");
-  return { success: true };
+  try {
+    await createBody({ name });
+    revalidatePath('/workouts/new');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { error: message };
+  }
 }
 
 export async function addExercise(formData: FormData) {
-  const name = formData.get("name") as string;
-  const bodyPartId = formData.get("bodyPartId") as string;
+  const name = (formData.get('name') as string | null)?.trim();
+  const body_id = (formData.get('bodyPartId') as string | null)?.trim();
 
-  if (!name || !bodyPartId) return { error: "Name and body part are required" };
+  if (!name || !body_id) return { error: 'Name and body part are required' };
 
-  const db = await getDb();
-  const newExercise: Exercise = { id: crypto.randomUUID(), name, bodyPartId };
-  db.exercises.push(newExercise);
-  await saveDb(db);
-
-  revalidatePath("/workouts/new");
-  return { success: true };
+  try {
+    await createExercise({ name, body_id });
+    revalidatePath('/workouts/new');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { error: message };
+  }
 }
 
 export async function addWorkoutRecord(data: {
   date: string;
   exerciseId: string;
   configs: SetConfig[];
+  notes?: string;
 }) {
   if (!data.date || !data.exerciseId || !data.configs.length) {
-    return { error: "Incomplete data" };
+    return { error: 'Incomplete data' };
   }
 
-  const db = await getDb();
-  const newRecord: WorkoutRecord = {
-    id: crypto.randomUUID(),
-    date: data.date,
-    exerciseId: data.exerciseId,
-    configs: data.configs,
-  };
-  db.records.push(newRecord);
-  await saveDb(db);
-
-  revalidatePath("/workouts/new");
-  return { success: true };
+  try {
+    await createWorkoutRecord({
+      date: data.date,
+      exercise_id: data.exerciseId,
+      configs: data.configs,
+      notes: data.notes,
+    });
+    revalidatePath('/workouts/new');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { error: message };
+  }
 }

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { BodyPart, Exercise, SetConfig } from "@/types/workout";
+import { Body, Exercise, SetConfig } from "@/types/workout";
 import { addBodyPart, addExercise, addWorkoutRecord } from "./actions";
 
 export default function NewWorkoutForms({
   initialBodyParts,
   initialExercises,
 }: {
-  initialBodyParts: BodyPart[];
+  initialBodyParts: Body[];
   initialExercises: Exercise[];
 }) {
   const [partName, setPartName] = useState("");
@@ -178,7 +178,7 @@ export default function NewWorkoutForms({
               <option value="">Select Exercise</option>
               {initialExercises.map((ex) => {
                 const part = initialBodyParts.find(
-                  (p) => p.id === ex.bodyPartId,
+                  (p) => p.id === ex.body_id,
                 );
                 return (
                   <option key={ex.id} value={ex.id}>

@@ -1,37 +1,52 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# Workout Record
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+## Project Overview
+Workout Record is a private fitness tracking web application built with Next.js (App Router), React, and TypeScript. It is designed to be deployed on Vercel. The application allows users to record workout details (date, exercise, weight, reps, sets, notes) and view training trends for different exercises. Currently, it consists of a placeholder skeleton structure.
 
-# Workout Record Project Instructions
+### Stack & Architecture
+- **Framework:** Next.js 16 (App Router)
+- **Library:** React 19
+- **Language:** TypeScript
+- **Styling:** SCSS (Vanilla SCSS / Modules). **Strictly NO Tailwind CSS.**
+- **Deployment:** Vercel
 
-Use these instructions for all work in this repository.
+### Critical Framework Notice
+- **Next.js Breaking Changes:** The current Next.js version may include breaking changes compared to older versions. Consult `node_modules/next/dist/docs/` for API changes and adhere to deprecation notices.
 
-## Product Goal
+## Building and Running
+To work locally with this project:
 
-Workout Record is a private fitness tracking app intended for Vercel deployment. It should let the user record workout dates, exercise names, weight, reps, sets, and related notes, then inspect trends by exercise.
+```powershell
+# Install dependencies
+npm install
 
-## Stack And Architecture
+# Run the development server (localhost:3000)
+npm run dev
 
-- Use Next.js App Router, React, TypeScript, and Vercel-friendly patterns.
-- Keep the `src/app` structure unless there is a strong reason to change it.
-- Use SCSS files (`.scss` or `.module.scss`) for styling. Do not introduce Tailwind CSS unless the user explicitly asks to change this decision.
-- Prefer server components by default. Add client components only when browser state, effects, event handlers, or client-only APIs are required.
+# Build for production
+npm run build
 
-## Workflow Requirements
+# Start the production server
+npm run start
 
-- Keep commits as small as practical while preserving a complete topic in each commit. Do not create commits unless the user explicitly asks.
-- Keep components reusable. Except for truly tiny components, place each component in its own file.
-- Split readable utility functions into `src/lib` or another clear utility area when that keeps the code human readable.
-- Maintain `memory.md`. Whenever the user mentions a new project rule, preference, decision, or constraint during development, append or update a concise note there.
-- After each feature is added or each bug is fixed, review the result against the user's original project prompt and the current `memory.md` notes.
-- Components and utility functions need unit tests. After each code change, run lint and the relevant tests before handing work back.
-- If tests fail in an area unrelated to the current change, investigate the real cause and verify existing behavior was not broken. Do not change tests only to make them pass.
+# Run linter
+npm run lint
+```
 
-## Quality Bar
+## Directory Structure Overview
+- `src/app/`: Contains the Next.js App Router structure (`page.tsx`, `layout.tsx`, `globals.scss`).
+  - `/`: Dashboard placeholder.
+  - `/workouts/new`: Form placeholder for new workout entry.
+  - `/trends`: Chart/trends placeholder.
+- `AGENTS.md` & `CLAUDE.md`: The source of truth for agent system prompts across different tools.
+- `memory.md`: An ongoing development memory log.
 
-- Keep changes focused and avoid unrelated refactors.
-- Prefer clear data shapes and named helpers over dense inline logic.
-- Preserve user-entered workout data carefully once persistence is introduced.
-- For charting, choose a library only after comparing fit for time-series exercise trends, responsive rendering, accessibility, and testability.
+## Development Conventions
+1. **Component Design:** Prioritize Server Components by default. Use Client Components only when browser state, effects, or events are required. Keep components reusable and isolated into separate files.
+2. **Styling:** Exclusively use `.scss` or `.module.scss` for styles. Do not introduce Tailwind. Use class instead of adding style props directly on elements.
+3. **Utilities:** Keep utility functions readable and place them in a dedicated folder like `src/lib/`.
+4. **Testing:** Write unit tests for new components and utility functions. After every code change, execute linting and tests to verify. Ensure E2E candidates (like Playwright) are evaluated for forms and charts.
+5. **Workflow:** Keep commits small and topically complete.
+6. **Memory Syncing:** Any new project rules, preferences, constraints, or findings MUST be continuously documented in `memory.md`. Categorize and update relevant sections as needed. Do not just log everything. Logs should go to changelog.md.
+7. **Quality:** Avoid unrelated refactoring. Preserve data shapes and focus on high readability over terse logic. Ensure charting tools are accessible, responsive, and testable.
+8. **Repository Structure**: After each feature or bug fix, update the repository structure to reflect the changes. The structure is recorded in the `Directory Structure Overview` section in AGENTS.md.

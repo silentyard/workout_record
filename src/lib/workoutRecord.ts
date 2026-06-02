@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { WorkoutRecord, CreateWorkoutRecordInput } from '../types/workout';
+import type { WorkoutRecord, CreateWorkoutRecordInput, UpdateWorkoutRecordInput } from '../types/workout';
 
 /**
  * Create a new workout record for a given exercise.
@@ -51,4 +51,40 @@ export async function listWorkoutRecordsByExercise(
 
   if (error) throw new Error(`listWorkoutRecordsByExercise failed: ${error.message}`);
   return (data ?? []) as WorkoutRecord[];
+}
+
+/**
+ * Update a workout record by ID.
+ */
+export async function updateWorkoutRecord(
+  id: string,
+  input: UpdateWorkoutRecordInput
+): Promise<WorkoutRecord> {
+  const updates: Record<string, unknown> = {};
+  if (input.date !== undefined) updates.date = input.date;
+  if (input.exercise_id !== undefined) updates.exercise_id = input.exercise_id;
+  if (input.configs !== undefined) updates.configs = input.configs;
+  if (input.notes !== undefined) updates.notes = input.notes;
+
+  const { data, error } = await supabase
+    .from('workout_record')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw new Error(`updateWorkoutRecord failed: ${error.message}`);
+  return data as WorkoutRecord;
+}
+
+/**
+ * Delete a workout record by ID.
+ */
+export async function deleteWorkoutRecord(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('workout_record')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(`deleteWorkoutRecord failed: ${error.message}`);
 }

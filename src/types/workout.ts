@@ -48,3 +48,22 @@ export interface CreateWorkoutRecordInput {
   configs: SetConfig[];
   notes?: string;
 }
+
+// ─── Update / partial-update types ─────────────────────────────────────────────
+
+export interface UpdateBodyInput {
+  name?: string;
+}
+
+export interface UpdateExerciseInput {
+  name?: string;
+  body_id?: string;
+  image_url?: string | null;
+}
+
+export interface UpdateWorkoutRecordInput {
+  date?: string;
+  exercise_id?: string;
+  configs?: SetConfig[];
+  notes?: string | null;
+}

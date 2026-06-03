@@ -46,7 +46,14 @@ npm run lint
     - `NewWorkoutForms.tsx` — client component
     - `NewWorkoutForms.module.scss` — form styles
     - `actions.ts` — server actions delegating to lib functions
-  - `/trends`: Chart/trends placeholder.
+  - `/trends`: Trends charts page.
+    - `page.tsx` — server component; fetches all records/exercises/bodies
+    - `actions.ts` — `getTrendsData()` server action
+    - `TrendsPage.tsx` — client component; date filter, quick presets, tab switcher
+    - `TrendsPage.module.scss` — styles
+    - `charts/WeeklyFrequencyChart.tsx` — bar chart: training days per week
+    - `charts/ExerciseVolumeChart.tsx` — line chart: daily volume by exercise
+    - `charts/BodyVolumeChart.tsx` — line chart: daily volume by body part
   - `/api/bodies` — `GET` list / `POST` create body
   - `/api/bodies/[id]` — `PATCH` update / `DELETE` body
   - `/api/exercises` — `GET` list (optional `?bodyId`) / `POST` create (JSON or multipart+image)

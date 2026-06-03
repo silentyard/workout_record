@@ -32,3 +32,10 @@
   - Moved body and exercise creation from `NewWorkoutForms` to a dedicated `/settings/exercises` page.
   - Implemented exercise image previews (grid view) in the new `/settings/exercises` page when a body part is selected.
   - Added quick-select preset buttons for reps (5, 8, 12, 15) and sets (1, 2, 3, 4) in the workout recording form.
+- 2026-06-03: Implemented trends charts on `/trends` (feature/trends-charts → master --no-ff).
+  - Installed: `chart.js`, `react-chartjs-2`, `date-fns`, `chartjs-adapter-date-fns`.
+  - Server fetches all records once; client filters by date range for instant UX.
+  - Volume formula: Σ(reps × weight_kg × sets); lb converted to kg (×0.453592) before summing.
+  - Bar chart: distinct training days per ISO week (Monday as week anchor).
+  - Line charts (exercise + body-part): uniform or proportional (time-scale) x-axis toggle.
+  - Date filter: quick presets (1w/1m/3m/6m/1y) + custom `<input type="date">` pair.

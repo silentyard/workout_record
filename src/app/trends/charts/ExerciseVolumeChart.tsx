@@ -68,7 +68,7 @@ function computeExerciseVolume(
 
 type XMode = 'proportional' | 'uniform';
 
-function makeOptions(mode: XMode, labels: string[]) {
+function makeOptions(mode: XMode) {
   const baseScales = {
     y: {
       title: { display: true, text: '訓練量 (kg·reps·sets)', color: '#5d675f', font: { size: 11 } },
@@ -112,7 +112,6 @@ function makeOptions(mode: XMode, labels: string[]) {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          title: (items: { label: string }[]) => labels[Number(items[0].dataIndex)] ?? '',
           label: (item: { raw: unknown }) =>
             `訓練量：${Math.round(item.raw as number)} kg-unit`,
         },
@@ -173,11 +172,7 @@ export default function ExerciseVolumeChart({
     };
   }, [dayVolumes, mode]);
 
-  const shortLabels = dayVolumes.map((d) => {
-    const parts = d.date.split('-');
-    return `${parts[1]}/${parts[2]}`;
-  });
-  const options = makeOptions(mode, shortLabels);
+  const options = makeOptions(mode);
 
   return (
     <div className={styles.chartCard}>

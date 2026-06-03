@@ -1,0 +1,299 @@
+// Mobile-first styles for the exercise settings page.
+
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .page {
+    padding: 1.5rem 0;
+    gap: 1.5rem;
+  }
+}
+
+.pageTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+@media (min-width: 600px) {
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .card {
+    padding: 1.5rem;
+    gap: 1.25rem;
+  }
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.inlineForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+@media (min-width: 520px) {
+  .inlineForm {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.625rem;
+  }
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+}
+
+@media (min-width: 520px) {
+  .fieldGroup {
+    flex: 1 1 160px;
+    width: auto;
+  }
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input,
+.select {
+  height: 44px;
+  padding: 0 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 1rem;
+  width: 100%;
+  transition: border-color 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(47, 111, 78, 0.12);
+  }
+}
+
+.btnPrimary {
+  height: 44px;
+  padding: 0 1.25rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, opacity 0.15s;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-strong);
+  }
+
+  &:active:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@media (min-width: 520px) {
+  .btnPrimary {
+    width: auto;
+    flex-shrink: 0;
+  }
+}
+
+.feedbackSuccess {
+  font-size: 0.875rem;
+  color: var(--accent-strong);
+  font-weight: 600;
+  padding: 0.625rem 0.875rem;
+  background: #e8f4ed;
+  border-radius: 8px;
+  border: 1px solid #b8ddc8;
+}
+
+.feedbackError {
+  font-size: 0.875rem;
+  color: #c0392b;
+  font-weight: 600;
+  padding: 0.625rem 0.875rem;
+  background: #fdecea;
+  border-radius: 8px;
+  border: 1px solid #f0b8b8;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.625rem;
+  border-radius: 6px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.tagEmpty {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+.fileInputLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 0.875rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover,
+  &:focus-within {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  input[type='file'] {
+    display: none;
+  }
+}
+
+.imagePreviewWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.imagePreview {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.imageClear {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c0392b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  min-height: var(--tap-target, 44px);
+  display: inline-flex;
+  align-items: center;
+
+  &:hover {
+    opacity: 0.75;
+  }
+}
+
+.exerciseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.exerciseCard {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.exerciseImage {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.exerciseImagePlaceholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  text-align: center;
+  border: 1px dashed var(--border);
+}
+
+.exerciseName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--foreground);
+  text-align: center;
+}

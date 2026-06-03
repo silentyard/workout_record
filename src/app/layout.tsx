@@ -40,6 +40,7 @@ export default function RootLayout({
             <nav className="site-nav" aria-label="主要導覽">
               <Link href="/">首頁</Link>
               <Link href="/workouts/new">新增訓練量</Link>
+              <Link href="/settings/exercises">部位 / 動作管理</Link>
               <Link href="/trends">趨勢圖</Link>
             </nav>
           </header>

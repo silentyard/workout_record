@@ -37,6 +37,28 @@ export async function listWorkoutRecords(): Promise<WorkoutRecord[]> {
 }
 
 /**
+ * List all workout records within a date range (inclusive), oldest first.
+ * If from/to are omitted the range is open-ended.
+ */
+export async function listWorkoutRecordsByDateRange(
+  from?: string, // YYYY-MM-DD
+  to?: string    // YYYY-MM-DD
+): Promise<WorkoutRecord[]> {
+  let query = supabase
+    .from('workout_record')
+    .select('*')
+    .order('date', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (from) query = query.gte('date', from);
+  if (to)   query = query.lte('date', to);
+
+  const { data, error } = await query;
+  if (error) throw new Error(`listWorkoutRecordsByDateRange failed: ${error.message}`);
+  return (data ?? []) as WorkoutRecord[];
+}
+
+/**
  * List all workout records for a specific exercise, most recent first.
  */
 export async function listWorkoutRecordsByExercise(

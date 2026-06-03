@@ -14,11 +14,15 @@ export interface Exercise {
   created_at: string;
 }
 
+/** Weight unit for a set config entry */
+export type WeightUnit = 'kg' | 'lb';
+
 /** One set in a workout: weight (kg/lb), number of reps, number of sets */
 export interface SetConfig {
   weight: number;
   reps: number;
   sets: number;
+  unit: WeightUnit;
 }
 
 export interface WorkoutRecord {

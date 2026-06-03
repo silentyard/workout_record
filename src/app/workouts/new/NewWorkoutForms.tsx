@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Body, Exercise, SetConfig } from '@/types/workout';
+import { Body, Exercise, SetConfig, WeightUnit } from '@/types/workout';
 import { addBodyPart, addExercise, addWorkoutRecord } from './actions';
 import styles from './NewWorkoutForms.module.scss';
 
@@ -37,7 +37,8 @@ export default function NewWorkoutForms({
   const [recDate, setRecDate] = useState(new Date().toISOString().split('T')[0]);
   const [recExerciseId, setRecExerciseId] = useState('');
   const [recNotes, setRecNotes] = useState('');
-  const [configs, setConfigs] = useState<SetConfig[]>([{ weight: 0, reps: 0, sets: 1 }]);
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>('kg');
+  const [configs, setConfigs] = useState<SetConfig[]>([{ weight: 0, reps: 0, sets: 1, unit: 'kg' }]);
   const [recFeedback, setRecFeedback] = useState<Feedback>(null);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ export default function NewWorkoutForms({
       setRecFeedback({ type: 'error', message: res.error });
     } else {
       setRecFeedback({ type: 'success', message: '訓練記錄已儲存' });
-      setConfigs([{ weight: 0, reps: 0, sets: 1 }]);
+      setConfigs([{ weight: 0, reps: 0, sets: 1, unit: weightUnit }]);
       setRecNotes('');
     }
   }
@@ -311,11 +312,29 @@ export default function NewWorkoutForms({
           </div>
 
           <div className={styles.setBlock}>
-            <p className={styles.setBlockTitle}>組數設定</p>
+            <div className={styles.setBlockHeader}>
+              <p className={styles.setBlockTitle}>組數設定</p>
+              <div className={styles.unitToggle}>
+                {(['kg', 'lb'] as WeightUnit[]).map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    className={`${styles.unitBtn} ${weightUnit === u ? styles.unitBtnActive : ''}`}
+                    onClick={() => {
+                      setWeightUnit(u);
+                      setConfigs((prev) => prev.map((c) => ({ ...c, unit: u })));
+                    }}
+                    disabled={isPending}
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </div>
             {configs.map((conf, idx) => (
               <div key={idx} className={styles.setRow}>
                 <div className={styles.setRowLabel}>
-                  <span>重量 (kg)</span>
+                  <span>重量 ({weightUnit})</span>
                   <input
                     className={styles.inputNarrow}
                     type="number"
@@ -366,7 +385,7 @@ export default function NewWorkoutForms({
             <button
               type="button"
               className={styles.btnSecondary}
-              onClick={() => setConfigs((prev) => [...prev, { weight: 0, reps: 0, sets: 1 }])}
+              onClick={() => setConfigs((prev) => [...prev, { weight: 0, reps: 0, sets: 1, unit: weightUnit }])}
               disabled={isPending}
             >
               ＋ 新增一組

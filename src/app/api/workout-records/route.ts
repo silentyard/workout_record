@@ -55,10 +55,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Default unit to 'kg' if not provided (backward compat)
+    const normalizedConfigs: SetConfig[] = (json.configs as SetConfig[]).map((c) => ({
+      ...c,
+      unit: c.unit === 'lb' ? 'lb' : 'kg',
+    }));
+
     const input: CreateWorkoutRecordInput = {
       date: json.date,
       exercise_id: json.exercise_id,
-      configs: json.configs,
+      configs: normalizedConfigs,
       notes: json.notes,
     };
 

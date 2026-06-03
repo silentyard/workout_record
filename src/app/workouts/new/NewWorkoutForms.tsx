@@ -148,6 +148,19 @@ export default function NewWorkoutForms({
                 </div>
                 <div className={styles.setRowLabel}>
                   <span>次數</span>
+                  <div className={styles.presetRow}>
+                    {[5, 8, 12, 15].map(val => (
+                      <button
+                        key={val}
+                        type="button"
+                        className={`${styles.presetBtn} ${conf.reps === val ? styles.presetBtnActive : ''}`}
+                        onClick={() => updateConfig(idx, 'reps', val)}
+                        disabled={false}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     className={styles.inputNarrow}
                     type="number"
@@ -160,6 +173,19 @@ export default function NewWorkoutForms({
                 </div>
                 <div className={styles.setRowLabel}>
                   <span>組數</span>
+                  <div className={styles.presetRow}>
+                    {[1, 2, 3, 4].map(val => (
+                      <button
+                        key={val}
+                        type="button"
+                        className={`${styles.presetBtn} ${conf.sets === val ? styles.presetBtnActive : ''}`}
+                        onClick={() => updateConfig(idx, 'sets', val)}
+                        disabled={false}
+                      >
+                        {val}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     className={styles.inputNarrow}
                     type="number"

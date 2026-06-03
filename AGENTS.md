@@ -36,15 +36,23 @@ npm run lint
 ## Directory Structure Overview
 - `src/app/`: Contains the Next.js App Router structure (`page.tsx`, `layout.tsx`, `globals.scss`).
   - `/`: Dashboard placeholder.
-  - `/workouts/new`: Workout entry form (body part, exercise, record).
+  - `/settings/exercises`: Body and exercise management forms.
     - `page.tsx` — server component; fetches bodies & exercises
-    - `NewWorkoutForms.tsx` — client component; all three forms
+    - `ExerciseManager.tsx` — client component
+    - `ExerciseManager.module.scss` — styles
+    - `actions.ts` — server actions
+  - `/workouts/new`: Workout entry form (record only).
+    - `page.tsx` — server component; fetches bodies & exercises
+    - `NewWorkoutForms.tsx` — client component
     - `NewWorkoutForms.module.scss` — form styles
     - `actions.ts` — server actions delegating to lib functions
   - `/trends`: Chart/trends placeholder.
   - `/api/bodies` — `GET` list / `POST` create body
+  - `/api/bodies/[id]` — `PATCH` update / `DELETE` body
   - `/api/exercises` — `GET` list (optional `?bodyId`) / `POST` create (JSON or multipart+image)
+  - `/api/exercises/[id]` — `PATCH` update / `DELETE` exercise
   - `/api/workout-records` — `GET` list (optional `?exerciseId`) / `POST` create
+  - `/api/workout-records/[id]` — `PATCH` update / `DELETE` workout record
 - `src/lib/`: Server-side utility functions.
   - `supabase.ts` — Supabase client
   - `body.ts` — `createBody`, `listBodies`

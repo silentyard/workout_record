@@ -26,4 +26,9 @@
   - Form layout: stacked (column) on mobile → side-by-side row at `min-width: 520px`.
   - Set-config row: CSS Grid `1fr 1fr 1fr` on mobile → `1fr 1fr 1fr auto` at `min-width: 480px`.
   - Buttons: full-width on mobile → `width: auto` at `min-width: 520px`.
-
+- 2026-06-03: Implemented CRUD APIs, unit selection, exercise management, and presets.
+  - Added Update/Delete APIs for bodies, exercises, and workout records under `src/app/api/.../[id]/route.ts`.
+  - Added `WeightUnit` (`kg` | `lb`) to `SetConfig`. A segmented control allows toggling unit for the whole record.
+  - Moved body and exercise creation from `NewWorkoutForms` to a dedicated `/settings/exercises` page.
+  - Implemented exercise image previews (grid view) in the new `/settings/exercises` page when a body part is selected.
+  - Added quick-select preset buttons for reps (5, 8, 12, 15) and sets (1, 2, 3, 4) in the workout recording form.

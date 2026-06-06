@@ -34,8 +34,11 @@ npm run lint
 ```
 
 ## Directory Structure Overview
+- `src/proxy.ts`: Next.js 16 route protection and session refresh middleware.
 - `src/app/`: Contains the Next.js App Router structure (`page.tsx`, `layout.tsx`, `globals.scss`).
   - `/`: Dashboard placeholder.
+  - `/login`: Email & password login and sign up form (`page.tsx`, `AuthForm.tsx`).
+  - `/auth/callback`: OAuth / Email confirmation callback handler.
   - `/settings/exercises`: Body and exercise management forms.
     - `page.tsx` — server component; fetches bodies & exercises
     - `ExerciseManager.tsx` — client component
@@ -61,7 +64,9 @@ npm run lint
   - `/api/workout-records` — `GET` list (optional `?exerciseId`) / `POST` create
   - `/api/workout-records/[id]` — `PATCH` update / `DELETE` workout record
 - `src/lib/`: Server-side utility functions.
-  - `supabase.ts` — Supabase client
+  - `supabase/`: Sub-folder for auth clients.
+    - `server.ts` — SSR client (uses cookies).
+    - `client.ts` — Browser client.
   - `body.ts` — `createBody`, `listBodies`
   - `exercise.ts` — `createExercise`, `listExercises`, `listExercisesByBody`
   - `workoutRecord.ts` — `createWorkoutRecord`, `listWorkoutRecords`, `listWorkoutRecordsByExercise`

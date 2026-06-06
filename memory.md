@@ -39,3 +39,11 @@
   - Bar chart: distinct training days per ISO week (Monday as week anchor).
   - Line charts (exercise + body-part): uniform or proportional (time-scale) x-axis toggle.
   - Date filter: quick presets (1w/1m/3m/6m/1y) + custom `<input type="date">` pair.
+- 2026-06-06: Implemented Supabase Auth (Email/Password) with user data isolation via RLS.
+  - Added `user_id` to `body`, `exercise`, and `workout_record` tables.
+  - Created RLS policies ensuring users can only read/write their own records.
+  - Used `@supabase/ssr` for HTTP-only cookie-based sessions, maintaining two clients: `src/lib/supabase/server.ts` for SSR and `client.ts` for browser usage.
+  - Added `/login` page with AuthForm (Client Component) supporting sign-up and sign-in.
+  - Implemented `/auth/callback` route to handle email verification links.
+  - Implemented route protection using Next.js proxy routing.
+  - **Framework Note**: Next.js 16 deprecated `middleware.ts` in favor of `proxy.ts` with `export async function proxy`. The application's proxy redirects unauthenticated users away from protected routes (`/workouts/*`, `/settings/*`, `/trends`) to `/login`.

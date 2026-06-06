@@ -1,14 +1,17 @@
-import { supabase } from './supabase';
+import { createClient } from './supabase/server';
 import type { Body, CreateBodyInput, UpdateBodyInput } from '../types/workout';
 
 /**
- * Create a new body part (e.g. "Chest", "Back").
- * Returns the created row.
+ * Create a new body part for the authenticated user.
  */
 export async function createBody(input: CreateBodyInput): Promise<Body> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('createBody: not authenticated');
+
   const { data, error } = await supabase
     .from('body')
-    .insert({ name: input.name.trim() })
+    .insert({ name: input.name.trim(), user_id: user.id })
     .select()
     .single();
 
@@ -17,9 +20,11 @@ export async function createBody(input: CreateBodyInput): Promise<Body> {
 }
 
 /**
- * List all body parts, ordered alphabetically.
+ * List all body parts for the authenticated user, ordered alphabetically.
+ * RLS automatically filters to the current user — no explicit where needed.
  */
 export async function listBodies(): Promise<Body[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('body')
     .select('*')
@@ -30,9 +35,10 @@ export async function listBodies(): Promise<Body[]> {
 }
 
 /**
- * Update a body part by ID.
+ * Update a body part by ID (user can only update their own via RLS).
  */
 export async function updateBody(id: string, input: UpdateBodyInput): Promise<Body> {
+  const supabase = await createClient();
   const updates: Record<string, unknown> = {};
   if (input.name !== undefined) updates.name = input.name.trim();
 
@@ -51,6 +57,7 @@ export async function updateBody(id: string, input: UpdateBodyInput): Promise<Bo
  * Delete a body part by ID. Cascades to exercises.
  */
 export async function deleteBody(id: string): Promise<void> {
+  const supabase = await createClient();
   const { error } = await supabase
     .from('body')
     .delete()

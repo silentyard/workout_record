@@ -1,12 +1,16 @@
-import { supabase } from './supabase';
+import { createClient } from './supabase/server';
 import type { WorkoutRecord, CreateWorkoutRecordInput, UpdateWorkoutRecordInput } from '../types/workout';
 
 /**
- * Create a new workout record for a given exercise.
+ * Create a new workout record for the authenticated user.
  */
 export async function createWorkoutRecord(
   input: CreateWorkoutRecordInput
 ): Promise<WorkoutRecord> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('createWorkoutRecord: not authenticated');
+
   const { data, error } = await supabase
     .from('workout_record')
     .insert({
@@ -14,6 +18,7 @@ export async function createWorkoutRecord(
       exercise_id: input.exercise_id,
       configs: input.configs,
       notes: input.notes ?? null,
+      user_id: user.id,
     })
     .select()
     .single();
@@ -23,9 +28,11 @@ export async function createWorkoutRecord(
 }
 
 /**
- * List all workout records, most recent first.
+ * List all workout records for the current user, most recent first.
+ * RLS automatically filters to the current user.
  */
 export async function listWorkoutRecords(): Promise<WorkoutRecord[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('workout_record')
     .select('*')
@@ -44,6 +51,7 @@ export async function listWorkoutRecordsByDateRange(
   from?: string, // YYYY-MM-DD
   to?: string    // YYYY-MM-DD
 ): Promise<WorkoutRecord[]> {
+  const supabase = await createClient();
   let query = supabase
     .from('workout_record')
     .select('*')
@@ -59,11 +67,12 @@ export async function listWorkoutRecordsByDateRange(
 }
 
 /**
- * List all workout records for a specific exercise, most recent first.
+ * List all workout records for a specific exercise (current user only via RLS).
  */
 export async function listWorkoutRecordsByExercise(
   exerciseId: string
 ): Promise<WorkoutRecord[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('workout_record')
     .select('*')
@@ -76,12 +85,13 @@ export async function listWorkoutRecordsByExercise(
 }
 
 /**
- * Update a workout record by ID.
+ * Update a workout record by ID (RLS enforces ownership).
  */
 export async function updateWorkoutRecord(
   id: string,
   input: UpdateWorkoutRecordInput
 ): Promise<WorkoutRecord> {
+  const supabase = await createClient();
   const updates: Record<string, unknown> = {};
   if (input.date !== undefined) updates.date = input.date;
   if (input.exercise_id !== undefined) updates.exercise_id = input.exercise_id;
@@ -103,6 +113,7 @@ export async function updateWorkoutRecord(
  * Delete a workout record by ID.
  */
 export async function deleteWorkoutRecord(id: string): Promise<void> {
+  const supabase = await createClient();
   const { error } = await supabase
     .from('workout_record')
     .delete()

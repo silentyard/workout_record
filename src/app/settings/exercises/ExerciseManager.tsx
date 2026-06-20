@@ -4,7 +4,14 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import imageCompression from 'browser-image-compression';
 import { Body, Exercise } from '@/types/workout';
-import { addBodyPart, addExercise } from './actions';
+import {
+  addBodyPart,
+  addExercise,
+  updateBodyPartAction,
+  deleteBodyPartAction,
+  updateExerciseAction,
+  deleteExerciseAction,
+} from './actions';
 import styles from './ExerciseManager.module.scss';
 
 type Feedback = { type: 'success' | 'error'; message: string } | null;
@@ -22,6 +29,7 @@ export default function ExerciseManager({
   // ── Body-part form state ──────────────────────────────────────────────────
   const [partName, setPartName] = useState('');
   const [partFeedback, setPartFeedback] = useState<Feedback>(null);
+  const [editingBodyId, setEditingBodyId] = useState<string | null>(null);
 
   // ── Exercise form state ───────────────────────────────────────────────────
   const [exName, setExName] = useState('');
@@ -29,6 +37,7 @@ export default function ExerciseManager({
   const [exImage, setExImage] = useState<File | null>(null);
   const [exImagePreview, setExImagePreview] = useState<string | null>(null);
   const [exFeedback, setExFeedback] = useState<Feedback>(null);
+  const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
 
   function refreshData() {
     startTransition(() => router.refresh());
@@ -36,44 +45,104 @@ export default function ExerciseManager({
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
-    if (exImagePreview) URL.revokeObjectURL(exImagePreview);
+    if (exImagePreview && !exImagePreview.startsWith('http')) {
+      URL.revokeObjectURL(exImagePreview);
+    }
     setExImage(file);
     setExImagePreview(file ? URL.createObjectURL(file) : null);
   }
 
   function clearImage() {
-    if (exImagePreview) URL.revokeObjectURL(exImagePreview);
+    if (exImagePreview && !exImagePreview.startsWith('http')) {
+      URL.revokeObjectURL(exImagePreview);
+    }
     setExImage(null);
     setExImagePreview(null);
   }
 
-  async function handleAddBodyPart(e: React.FormEvent) {
+  // ── Body Part Actions ─────────────────────────────────────────────────────
+
+  async function handleAddOrUpdateBodyPart(e: React.FormEvent) {
     e.preventDefault();
     setPartFeedback(null);
+
+    if (editingBodyId) {
+      if (!window.confirm('確定要儲存部位修改嗎？')) return;
+    }
+
     try {
       const fd = new FormData();
       fd.append('name', partName);
-      const res = await addBodyPart(fd);
+      
+      const res = editingBodyId
+        ? await updateBodyPartAction(editingBodyId, fd)
+        : await addBodyPart(fd);
+
       if (res?.error) {
         setPartFeedback({ type: 'error', message: res.error });
       } else {
-        setPartFeedback({ type: 'success', message: `"${partName}" 新增成功` });
-        setPartName('');
+        setPartFeedback({
+          type: 'success',
+          message: `"${partName}" ${editingBodyId ? '修改' : '新增'}成功`,
+        });
+        cancelEditBodyPart();
         refreshData();
       }
-    } catch (err: any) {
-      setPartFeedback({ type: 'error', message: err?.message || '新增失敗，請確認網路連線。' });
+    } catch (err: unknown) {
+      const e = err as Error;
+      setPartFeedback({
+        type: 'error',
+        message: e?.message || '操作失敗，請確認網路連線。',
+      });
     }
   }
 
-  async function handleAddExercise(e: React.FormEvent) {
+  function startEditBodyPart(body: Body) {
+    setEditingBodyId(body.id);
+    setPartName(body.name);
+    setPartFeedback(null);
+  }
+
+  function cancelEditBodyPart() {
+    setEditingBodyId(null);
+    setPartName('');
+    setPartFeedback(null);
+  }
+
+  async function handleDeleteBodyPart(id: string) {
+    if (!window.confirm('確定要刪除此部位嗎？這將連帶刪除底下所有的動作與訓練紀錄！這項操作無法復原。')) {
+      return;
+    }
+    setPartFeedback(null);
+    try {
+      const res = await deleteBodyPartAction(id);
+      if (res?.error) {
+        setPartFeedback({ type: 'error', message: res.error });
+      } else {
+        setPartFeedback({ type: 'success', message: '刪除成功' });
+        if (editingBodyId === id) cancelEditBodyPart();
+        refreshData();
+      }
+    } catch (err: unknown) {
+      const e = err as Error;
+      setPartFeedback({ type: 'error', message: e?.message || '刪除失敗' });
+    }
+  }
+
+  // ── Exercise Actions ──────────────────────────────────────────────────────
+
+  async function handleAddOrUpdateExercise(e: React.FormEvent) {
     e.preventDefault();
     setExFeedback(null);
+
+    if (editingExerciseId) {
+      if (!window.confirm('確定要儲存動作修改嗎？')) return;
+    }
     
     try {
       let finalImage = exImage;
 
-      // 如果有圖片，先進行客戶端壓縮
+      // 如果有新圖片，先進行客戶端壓縮
       if (exImage) {
         setExFeedback({ type: 'success', message: '正在處理與壓縮圖片...' });
         const options = {
@@ -93,21 +162,67 @@ export default function ExerciseManager({
         fd.append('image', finalImage, finalImage.name || exImage?.name);
       }
       
-      const res = await addExercise(fd);
+      const res = editingExerciseId
+        ? await updateExerciseAction(editingExerciseId, fd)
+        : await addExercise(fd);
+
       if (res?.error) {
         setExFeedback({ type: 'error', message: res.error });
       } else {
-        setExFeedback({ type: 'success', message: `"${exName}" 新增成功` });
-        setExName('');
-        clearImage();
+        setExFeedback({
+          type: 'success',
+          message: `"${exName}" ${editingExerciseId ? '修改' : '新增'}成功`,
+        });
+        cancelEditExercise();
         refreshData();
       }
-    } catch (err: any) {
-      // 捕捉 Server Action 拋出的 413 Payload Too Large 等連線層級錯誤
+    } catch (err: unknown) {
+      const e = err as Error;
       setExFeedback({ 
         type: 'error', 
-        message: err?.message || '上傳失敗，請確認網路狀態或檔案是否過大。' 
+        message: e?.message || '上傳失敗，請確認網路狀態或檔案是否過大。' 
       });
+    }
+  }
+
+  function startEditExercise(ex: Exercise) {
+    setEditingExerciseId(ex.id);
+    setExName(ex.name);
+    setExBodyId(ex.body_id);
+    if (ex.image_url) {
+      setExImagePreview(ex.image_url);
+    } else {
+      clearImage();
+    }
+    setExImage(null);
+    setExFeedback(null);
+    window.scrollTo({ top: 300, behavior: 'smooth' }); // scroll to form roughly
+  }
+
+  function cancelEditExercise() {
+    setEditingExerciseId(null);
+    setExName('');
+    clearImage();
+    setExFeedback(null);
+  }
+
+  async function handleDeleteExercise(id: string) {
+    if (!window.confirm('確定要刪除此動作嗎？這將連帶刪除此動作所有的訓練紀錄！這項操作無法復原。')) {
+      return;
+    }
+    setExFeedback(null);
+    try {
+      const res = await deleteExerciseAction(id);
+      if (res?.error) {
+        setExFeedback({ type: 'error', message: res.error });
+      } else {
+        setExFeedback({ type: 'success', message: '刪除成功' });
+        if (editingExerciseId === id) cancelEditExercise();
+        refreshData();
+      }
+    } catch (err: unknown) {
+      const e = err as Error;
+      setExFeedback({ type: 'error', message: e?.message || '刪除失敗' });
     }
   }
 
@@ -121,9 +236,11 @@ export default function ExerciseManager({
       <h1 className={styles.pageTitle}>部位 / 動作管理</h1>
 
       <section className={styles.card}>
-        <h2 className={styles.cardTitle}>1. 新增部位</h2>
+        <h2 className={styles.cardTitle}>
+          {editingBodyId ? '編輯部位' : '1. 新增部位'}
+        </h2>
 
-        <form className={styles.inlineForm} onSubmit={handleAddBodyPart}>
+        <form className={styles.inlineForm} onSubmit={handleAddOrUpdateBodyPart}>
           <div className={styles.fieldGroup}>
             <label htmlFor="partName" className={styles.label}>部位名稱</label>
             <input
@@ -142,8 +259,19 @@ export default function ExerciseManager({
             className={styles.btnPrimary}
             disabled={isPending || !partName.trim()}
           >
-            新增部位
+            {editingBodyId ? '儲存部位修改' : '新增部位'}
           </button>
+          {editingBodyId && (
+            <button
+              type="button"
+              className={styles.btnPrimary}
+              style={{ background: 'var(--surface-muted)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+              onClick={cancelEditBodyPart}
+              disabled={isPending}
+            >
+              取消
+            </button>
+          )}
         </form>
 
         {partFeedback && (
@@ -159,23 +287,36 @@ export default function ExerciseManager({
         ) : (
           <div className={styles.tagList}>
             {initialBodyParts.map((bp) => (
-              <span key={bp.id} className={styles.tag}>{bp.name}</span>
+              <span key={bp.id} className={styles.tag}>
+                {bp.name}
+                <button type="button" className={styles.actionBtn} onClick={() => startEditBodyPart(bp)} title="編輯">
+                  ✏️
+                </button>
+                <button type="button" className={styles.actionBtn} onClick={() => handleDeleteBodyPart(bp.id)} title="刪除">
+                  🗑️
+                </button>
+              </span>
             ))}
           </div>
         )}
       </section>
 
       <section className={styles.card}>
-        <h2 className={styles.cardTitle}>2. 新增與管理動作</h2>
+        <h2 className={styles.cardTitle}>
+          {editingExerciseId ? '編輯動作' : '2. 新增與管理動作'}
+        </h2>
 
-        <form className={styles.inlineForm} onSubmit={handleAddExercise}>
+        <form className={styles.inlineForm} onSubmit={handleAddOrUpdateExercise}>
           <div className={styles.fieldGroup}>
             <label htmlFor="exBodyId" className={styles.label}>部位</label>
             <select
               id="exBodyId"
               className={styles.select}
               value={exBodyId}
-              onChange={(e) => setExBodyId(e.target.value)}
+              onChange={(e) => {
+                setExBodyId(e.target.value);
+                // If we're editing and we change the body part, that's allowed, but we shouldn't reset the editing state
+              }}
               required
               disabled={isPending}
             >
@@ -201,7 +342,7 @@ export default function ExerciseManager({
           <div className={styles.fieldGroup}>
             <label className={styles.label}>動作圖片（選填）</label>
             <label className={styles.fileInputLabel}>
-              📷 {exImage ? exImage.name : '選擇圖片'}
+              📷 {exImage ? exImage.name : (editingExerciseId && exImagePreview ? '重新上傳圖片' : '選擇圖片')}
               <input
                 type="file"
                 accept="image/*"
@@ -215,8 +356,19 @@ export default function ExerciseManager({
             className={styles.btnPrimary}
             disabled={isPending || !exName.trim() || !exBodyId}
           >
-            新增動作
+            {editingExerciseId ? '儲存動作修改' : '新增動作'}
           </button>
+          {editingExerciseId && (
+            <button
+              type="button"
+              className={styles.btnPrimary}
+              style={{ background: 'var(--surface-muted)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+              onClick={cancelEditExercise}
+              disabled={isPending}
+            >
+              取消
+            </button>
+          )}
         </form>
 
         {exImagePreview && (
@@ -247,6 +399,14 @@ export default function ExerciseManager({
               <div className={styles.exerciseGrid}>
                 {selectedBodyExercises.map((ex) => (
                   <div key={ex.id} className={styles.exerciseCard}>
+                    <div className={styles.cardActions}>
+                      <button type="button" className={styles.cardActionBtn} onClick={() => startEditExercise(ex)} title="編輯">
+                        ✏️
+                      </button>
+                      <button type="button" className={styles.cardActionBtn} onClick={() => handleDeleteExercise(ex.id)} title="刪除">
+                        🗑️
+                      </button>
+                    </div>
                     {ex.image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={ex.image_url} alt={ex.name} className={styles.exerciseImage} />

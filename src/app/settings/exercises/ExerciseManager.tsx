@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import imageCompression from 'browser-image-compression';
 import { Body, Exercise } from '@/types/workout';
 import { addBodyPart, addExercise } from './actions';
 import styles from './ExerciseManager.module.scss';
@@ -49,33 +50,64 @@ export default function ExerciseManager({
   async function handleAddBodyPart(e: React.FormEvent) {
     e.preventDefault();
     setPartFeedback(null);
-    const fd = new FormData();
-    fd.append('name', partName);
-    const res = await addBodyPart(fd);
-    if (res?.error) {
-      setPartFeedback({ type: 'error', message: res.error });
-    } else {
-      setPartFeedback({ type: 'success', message: `"${partName}" 新增成功` });
-      setPartName('');
-      refreshData();
+    try {
+      const fd = new FormData();
+      fd.append('name', partName);
+      const res = await addBodyPart(fd);
+      if (res?.error) {
+        setPartFeedback({ type: 'error', message: res.error });
+      } else {
+        setPartFeedback({ type: 'success', message: `"${partName}" 新增成功` });
+        setPartName('');
+        refreshData();
+      }
+    } catch (err: any) {
+      setPartFeedback({ type: 'error', message: err?.message || '新增失敗，請確認網路連線。' });
     }
   }
 
   async function handleAddExercise(e: React.FormEvent) {
     e.preventDefault();
     setExFeedback(null);
-    const fd = new FormData();
-    fd.append('name', exName);
-    fd.append('bodyPartId', exBodyId);
-    if (exImage) fd.append('image', exImage);
-    const res = await addExercise(fd);
-    if (res?.error) {
-      setExFeedback({ type: 'error', message: res.error });
-    } else {
-      setExFeedback({ type: 'success', message: `"${exName}" 新增成功` });
-      setExName('');
-      clearImage();
-      refreshData();
+    
+    try {
+      let finalImage = exImage;
+
+      // 如果有圖片，先進行客戶端壓縮
+      if (exImage) {
+        setExFeedback({ type: 'success', message: '正在處理與壓縮圖片...' });
+        const options = {
+          maxSizeMB: 1, // 目標壓縮至 1MB 以下
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        };
+        finalImage = await imageCompression(exImage, options) as File;
+      }
+
+      setExFeedback({ type: 'success', message: '正在上傳儲存...' });
+      const fd = new FormData();
+      fd.append('name', exName);
+      fd.append('bodyPartId', exBodyId);
+      if (finalImage) {
+        // browser-image-compression 回傳 File or Blob，如果是 Blob 可以加上檔名
+        fd.append('image', finalImage, finalImage.name || exImage?.name);
+      }
+      
+      const res = await addExercise(fd);
+      if (res?.error) {
+        setExFeedback({ type: 'error', message: res.error });
+      } else {
+        setExFeedback({ type: 'success', message: `"${exName}" 新增成功` });
+        setExName('');
+        clearImage();
+        refreshData();
+      }
+    } catch (err: any) {
+      // 捕捉 Server Action 拋出的 413 Payload Too Large 等連線層級錯誤
+      setExFeedback({ 
+        type: 'error', 
+        message: err?.message || '上傳失敗，請確認網路狀態或檔案是否過大。' 
+      });
     }
   }
 

@@ -50,3 +50,8 @@
 - 2026-06-20: Added client-side image compression and robust error handling for uploads.
   - Installed `browser-image-compression` to resize images (max 1920px, 1MB limit) before submitting to Vercel Blob, avoiding the 4.5MB Serverless Function payload limit.
   - Wrapped Server Action invocations in client-side `try/catch` to display network and infrastructure errors natively in the UI.
+- 2026-06-20: Implemented Edit and Delete functionalities for Body Parts and Exercises in Settings page.
+  - Added Edit (✏️) and Delete (🗑️) icons to Body tags and Exercise cards.
+  - Reused the existing creation forms for inline editing by populating state on Edit click.
+  - Added strict `window.confirm` dialogs for both Edit and Delete actions to prevent accidental data loss, explicitly warning users about cascading deletion (records tied to exercises, exercises tied to body parts).
+  - Wired up `updateBody`, `deleteBody`, `updateExercise`, `deleteExercise` Server Actions in `actions.ts`.

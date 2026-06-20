@@ -47,3 +47,6 @@
   - Implemented `/auth/callback` route to handle email verification links.
   - Implemented route protection using Next.js proxy routing.
   - **Framework Note**: Next.js 16 deprecated `middleware.ts` in favor of `proxy.ts` with `export async function proxy`. The application's proxy redirects unauthenticated users away from protected routes (`/workouts/*`, `/settings/*`, `/trends`) to `/login`.
+- 2026-06-20: Added client-side image compression and robust error handling for uploads.
+  - Installed `browser-image-compression` to resize images (max 1920px, 1MB limit) before submitting to Vercel Blob, avoiding the 4.5MB Serverless Function payload limit.
+  - Wrapped Server Action invocations in client-side `try/catch` to display network and infrastructure errors natively in the UI.

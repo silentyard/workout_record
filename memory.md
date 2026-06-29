@@ -55,3 +55,8 @@
   - Reused the existing creation forms for inline editing by populating state on Edit click.
   - Added strict `window.confirm` dialogs for both Edit and Delete actions to prevent accidental data loss, explicitly warning users about cascading deletion (records tied to exercises, exercises tied to body parts).
   - Wired up `updateBody`, `deleteBody`, `updateExercise`, `deleteExercise` Server Actions in `actions.ts`.
+- 2026-06-29: Workout form improvements.
+  - Added `getLastWorkoutForExercise` server action to fetch the most recent record for a given exercise.
+  - When an exercise is selected, the form now shows the last workout summary: date, config breakdown (e.g., `20kg × 15 × 2組 + 25kg × 15 × 1組`), and total volume (kg-unit).
+  - Added real-time volume calculation that updates as the user edits weight/reps/sets; lb values are converted to kg before summing.
+  - Fixed mobile number input issues: replaced `type="number"` with `type="text"` + `inputMode="decimal"/"numeric"` to avoid leading-zero lock, decimal-point rejection, and iOS "invalid number" validation errors. Used a raw-string state layer (`rawInputs`) per field for natural typing UX.

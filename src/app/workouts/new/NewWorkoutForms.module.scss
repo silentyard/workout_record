@@ -500,3 +500,77 @@
   flex-direction: column;
   gap: 1rem;
 }
+
+// ── Last workout summary ─────────────────────────────────────────────────────
+
+.lastWorkoutBox {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: var(--surface-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.lastWorkoutTitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lastWorkoutContent {
+  font-size: 0.875rem;
+  color: var(--foreground);
+  line-height: 1.6;
+}
+
+.lastWorkoutDate {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.lastWorkoutDetail {
+  font-weight: 600;
+}
+
+.lastWorkoutVolume {
+  font-size: 0.82rem;
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+// ── Real-time volume display ─────────────────────────────────────────────────
+
+.volumeDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #e8f4ed;
+  border: 1px solid #b8ddc8;
+}
+
+.volumeLabel {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.volumeValue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+
+  small {
+    font-size: 0.75rem;
+    font-weight: 500;
+    opacity: 0.8;
+  }
+}
+

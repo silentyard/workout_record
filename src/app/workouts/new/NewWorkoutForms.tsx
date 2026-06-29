@@ -23,11 +23,9 @@ function calcVolume(configs: SetConfig[]): number {
   return configs.reduce((sum, c) => sum + weightInKg(c) * c.reps * c.sets, 0);
 }
 
-/** Format a SetConfig list as a human-readable summary string. */
-function formatConfigsSummary(configs: SetConfig[]): string {
-  return configs
-    .map((c) => `${c.weight}${c.unit} × ${c.reps} × ${c.sets}組`)
-    .join(' + ');
+/** Format a SetConfig list as an array of human-readable summary strings. */
+function formatConfigsSummary(configs: SetConfig[]): string[] {
+  return configs.map((c) => `${c.weight}${c.unit} × ${c.reps} × ${c.sets}組`);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -233,9 +231,11 @@ export default function NewWorkoutForms({
                   <p className={styles.lastWorkoutDate}>
                     📅 {lastWorkout.date}
                   </p>
-                  <p className={styles.lastWorkoutDetail}>
-                    {formatConfigsSummary(lastWorkout.configs)}
-                  </p>
+                  <div className={styles.lastWorkoutDetail}>
+                    {formatConfigsSummary(lastWorkout.configs).map((line, idx) => (
+                      <div key={idx}>{line}</div>
+                    ))}
+                  </div>
                   <p className={styles.lastWorkoutVolume}>
                     總訓練量：{calcVolume(lastWorkout.configs).toFixed(1)} kg-unit
                   </p>

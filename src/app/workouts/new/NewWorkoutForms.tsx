@@ -1,13 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { Body, Exercise, SetConfig, WeightUnit } from '@/types/workout';
-import { addWorkoutRecord } from './actions';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Body, Exercise, SetConfig, WeightUnit, WorkoutRecord } from '@/types/workout';
+import { addWorkoutRecord, getLastWorkoutForExercise } from './actions';
 import styles from './NewWorkoutForms.module.scss';
 
 // ─── Feedback state type ──────────────────────────────────────────────────────
 
 type Feedback = { type: 'success' | 'error'; message: string } | null;
+
+// ─── Volume helpers ───────────────────────────────────────────────────────────
+
+const LB_TO_KG = 0.453592;
+
+/** Convert a SetConfig's weight to kg for volume calculation. */
+function weightInKg(conf: SetConfig): number {
+  return conf.unit === 'lb' ? conf.weight * LB_TO_KG : conf.weight;
+}
+
+/** Calculate total volume (kg-unit) for a list of SetConfigs. */
+function calcVolume(configs: SetConfig[]): number {
+  return configs.reduce((sum, c) => sum + weightInKg(c) * c.reps * c.sets, 0);
+}
+
+/** Format a SetConfig list as a human-readable summary string. */
+function formatConfigsSummary(configs: SetConfig[]): string {
+  return configs
+    .map((c) => `${c.weight}${c.unit} × ${c.reps} × ${c.sets}組`)
+    .join(' + ');
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -27,6 +48,73 @@ export default function NewWorkoutForms({
   const [configs, setConfigs] = useState<SetConfig[]>([{ weight: 0, reps: 0, sets: 1, unit: 'kg' }]);
   const [recFeedback, setRecFeedback] = useState<Feedback>(null);
 
+  // ── Last workout state ────────────────────────────────────────────────────
+  const [lastWorkout, setLastWorkout] = useState<WorkoutRecord | null>(null);
+  const [lastWorkoutLoading, setLastWorkoutLoading] = useState(false);
+
+  // ── Text-mode inputs for mobile-friendly number editing ───────────────────
+  // We store the raw string typed by the user so that leading zeros, empty
+  // fields, and decimal points all work naturally on mobile keyboards.
+  const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
+
+  function getRawKey(idx: number, field: string) {
+    return `${idx}-${field}`;
+  }
+
+  function getRawValue(idx: number, field: string, numericValue: number): string {
+    const key = getRawKey(idx, field);
+    if (key in rawInputs) return rawInputs[key];
+    // Default: show numeric value, but show empty string for 0 so mobile users
+    // can type fresh
+    return numericValue === 0 ? '' : String(numericValue);
+  }
+
+  function handleRawChange(idx: number, field: keyof SetConfig, raw: string) {
+    const key = getRawKey(idx, field);
+    setRawInputs((prev) => ({ ...prev, [key]: raw }));
+
+    // Parse and update underlying numeric state
+    const parsed = field === 'weight' ? parseFloat(raw) : parseInt(raw, 10);
+    const value = isNaN(parsed) ? 0 : parsed;
+    updateConfig(idx, field, value);
+  }
+
+  function handleRawBlur(idx: number, field: string) {
+    // On blur, remove the raw override so the canonical numeric value takes over
+    const key = getRawKey(idx, field);
+    setRawInputs((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
+  // ── Fetch last workout on exercise change ─────────────────────────────────
+
+  const fetchLastWorkout = useCallback(async (exerciseId: string) => {
+    if (!exerciseId) {
+      setLastWorkout(null);
+      return;
+    }
+    setLastWorkoutLoading(true);
+    try {
+      const record = await getLastWorkoutForExercise(exerciseId);
+      setLastWorkout(record);
+    } catch {
+      setLastWorkout(null);
+    } finally {
+      setLastWorkoutLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLastWorkout(recExerciseId);
+  }, [recExerciseId, fetchLastWorkout]);
+
+  // ── Current volume (real-time) ────────────────────────────────────────────
+
+  const currentVolume = useMemo(() => calcVolume(configs), [configs]);
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function updateConfig(index: number, field: keyof SetConfig, value: number) {
@@ -39,6 +127,14 @@ export default function NewWorkoutForms({
 
   function removeConfigRow(index: number) {
     setConfigs((prev) => prev.filter((_, i) => i !== index));
+    // Also clean up raw inputs for the removed row
+    setRawInputs((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((key) => {
+        if (key.startsWith(`${index}-`)) delete next[key];
+      });
+      return next;
+    });
   }
 
   // ── Submit handlers ───────────────────────────────────────────────────────
@@ -46,18 +142,35 @@ export default function NewWorkoutForms({
   async function handleAddRecord(e: React.FormEvent) {
     e.preventDefault();
     setRecFeedback(null);
-    const res = await addWorkoutRecord({
-      date: recDate,
-      exerciseId: recExerciseId,
-      configs,
-      notes: recNotes || undefined,
-    });
-    if (res?.error) {
-      setRecFeedback({ type: 'error', message: res.error });
-    } else {
-      setRecFeedback({ type: 'success', message: '訓練記錄已儲存' });
-      setConfigs([{ weight: 0, reps: 0, sets: 1, unit: weightUnit }]);
-      setRecNotes('');
+
+    // Validate that all numeric fields have sensible values
+    for (const conf of configs) {
+      if (conf.weight < 0 || conf.reps < 1 || conf.sets < 1) {
+        setRecFeedback({ type: 'error', message: '請確認每組的重量、次數和組數都已正確填寫。' });
+        return;
+      }
+    }
+
+    try {
+      const res = await addWorkoutRecord({
+        date: recDate,
+        exerciseId: recExerciseId,
+        configs,
+        notes: recNotes || undefined,
+      });
+      if (res?.error) {
+        setRecFeedback({ type: 'error', message: res.error });
+      } else {
+        setRecFeedback({ type: 'success', message: '訓練記錄已儲存' });
+        setConfigs([{ weight: 0, reps: 0, sets: 1, unit: weightUnit }]);
+        setRawInputs({});
+        setRecNotes('');
+        // Refresh last workout data for this exercise
+        fetchLastWorkout(recExerciseId);
+      }
+    } catch (err: unknown) {
+      const e = err as Error;
+      setRecFeedback({ type: 'error', message: e?.message || '儲存失敗，請確認網路連線。' });
     }
   }
 
@@ -67,7 +180,7 @@ export default function NewWorkoutForms({
     <div className={styles.page}>
       <h1 className={styles.pageTitle}>新增訓練</h1>
 
-      {/* ── 3. Workout Record ────────────────────────────────────────────── */}
+      {/* ── Workout Record ────────────────────────────────────────────── */}
       <section className={styles.card}>
         <h2 className={styles.cardTitle}>記錄訓練量</h2>
 
@@ -82,7 +195,6 @@ export default function NewWorkoutForms({
                 value={recDate}
                 onChange={(e) => setRecDate(e.target.value)}
                 required
-                disabled={false}
               />
             </div>
             <div className={styles.fieldGroup}>
@@ -93,7 +205,6 @@ export default function NewWorkoutForms({
                 value={recExerciseId}
                 onChange={(e) => setRecExerciseId(e.target.value)}
                 required
-                disabled={false}
               >
                 <option value="">選擇動作</option>
                 {initialBodyParts.map((bp) => {
@@ -111,6 +222,30 @@ export default function NewWorkoutForms({
             </div>
           </div>
 
+          {/* ── Last workout summary ──────────────────────────────────── */}
+          {recExerciseId && (
+            <div className={styles.lastWorkoutBox}>
+              <p className={styles.lastWorkoutTitle}>上次紀錄</p>
+              {lastWorkoutLoading ? (
+                <p className={styles.lastWorkoutContent}>載入中...</p>
+              ) : lastWorkout ? (
+                <div className={styles.lastWorkoutContent}>
+                  <p className={styles.lastWorkoutDate}>
+                    📅 {lastWorkout.date}
+                  </p>
+                  <p className={styles.lastWorkoutDetail}>
+                    {formatConfigsSummary(lastWorkout.configs)}
+                  </p>
+                  <p className={styles.lastWorkoutVolume}>
+                    總訓練量：{calcVolume(lastWorkout.configs).toFixed(1)} kg-unit
+                  </p>
+                </div>
+              ) : (
+                <p className={styles.lastWorkoutContent}>無歷史紀錄</p>
+              )}
+            </div>
+          )}
+
           <div className={styles.setBlock}>
             <div className={styles.setBlockHeader}>
               <p className={styles.setBlockTitle}>組數設定</p>
@@ -124,7 +259,6 @@ export default function NewWorkoutForms({
                       setWeightUnit(u);
                       setConfigs((prev) => prev.map((c) => ({ ...c, unit: u })));
                     }}
-                    disabled={false}
                   >
                     {u}
                   </button>
@@ -137,13 +271,15 @@ export default function NewWorkoutForms({
                   <span>重量 ({weightUnit})</span>
                   <input
                     className={styles.inputNarrow}
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    value={conf.weight}
-                    onChange={(e) => updateConfig(idx, 'weight', parseFloat(e.target.value) || 0)}
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    placeholder="0"
+                    value={getRawValue(idx, 'weight', conf.weight)}
+                    onChange={(e) => handleRawChange(idx, 'weight', e.target.value)}
+                    onBlur={() => handleRawBlur(idx, 'weight')}
+                    onFocus={(e) => e.target.select()}
                     required
-                    disabled={false}
                   />
                 </div>
                 <div className={styles.setRowLabel}>
@@ -154,8 +290,15 @@ export default function NewWorkoutForms({
                         key={val}
                         type="button"
                         className={`${styles.presetBtn} ${conf.reps === val ? styles.presetBtnActive : ''}`}
-                        onClick={() => updateConfig(idx, 'reps', val)}
-                        disabled={false}
+                        onClick={() => {
+                          updateConfig(idx, 'reps', val);
+                          // Clear raw input so numeric value takes over
+                          setRawInputs((prev) => {
+                            const next = { ...prev };
+                            delete next[getRawKey(idx, 'reps')];
+                            return next;
+                          });
+                        }}
                       >
                         {val}
                       </button>
@@ -163,12 +306,15 @@ export default function NewWorkoutForms({
                   </div>
                   <input
                     className={styles.inputNarrow}
-                    type="number"
-                    min="1"
-                    value={conf.reps}
-                    onChange={(e) => updateConfig(idx, 'reps', parseInt(e.target.value) || 0)}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="0"
+                    value={getRawValue(idx, 'reps', conf.reps)}
+                    onChange={(e) => handleRawChange(idx, 'reps', e.target.value)}
+                    onBlur={() => handleRawBlur(idx, 'reps')}
+                    onFocus={(e) => e.target.select()}
                     required
-                    disabled={false}
                   />
                 </div>
                 <div className={styles.setRowLabel}>
@@ -179,8 +325,14 @@ export default function NewWorkoutForms({
                         key={val}
                         type="button"
                         className={`${styles.presetBtn} ${conf.sets === val ? styles.presetBtnActive : ''}`}
-                        onClick={() => updateConfig(idx, 'sets', val)}
-                        disabled={false}
+                        onClick={() => {
+                          updateConfig(idx, 'sets', val);
+                          setRawInputs((prev) => {
+                            const next = { ...prev };
+                            delete next[getRawKey(idx, 'sets')];
+                            return next;
+                          });
+                        }}
                       >
                         {val}
                       </button>
@@ -188,12 +340,15 @@ export default function NewWorkoutForms({
                   </div>
                   <input
                     className={styles.inputNarrow}
-                    type="number"
-                    min="1"
-                    value={conf.sets}
-                    onChange={(e) => updateConfig(idx, 'sets', parseInt(e.target.value) || 0)}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="0"
+                    value={getRawValue(idx, 'sets', conf.sets)}
+                    onChange={(e) => handleRawChange(idx, 'sets', e.target.value)}
+                    onBlur={() => handleRawBlur(idx, 'sets')}
+                    onFocus={(e) => e.target.select()}
                     required
-                    disabled={false}
                   />
                 </div>
                 {configs.length > 1 && (
@@ -201,7 +356,6 @@ export default function NewWorkoutForms({
                     type="button"
                     className={styles.btnDanger}
                     onClick={() => removeConfigRow(idx)}
-                    disabled={false}
                   >
                     移除
                   </button>
@@ -211,11 +365,20 @@ export default function NewWorkoutForms({
             <button
               type="button"
               className={styles.btnSecondary}
-              onClick={() => setConfigs((prev) => [...prev, { weight: 0, reps: 0, sets: 1, unit: weightUnit }])}
-              disabled={false}
+              onClick={() => {
+                setConfigs((prev) => [...prev, { weight: 0, reps: 0, sets: 1, unit: weightUnit }]);
+              }}
             >
               ＋ 新增一組
             </button>
+          </div>
+
+          {/* ── Real-time volume display ──────────────────────────────── */}
+          <div className={styles.volumeDisplay}>
+            <span className={styles.volumeLabel}>本次訓練量</span>
+            <span className={styles.volumeValue}>
+              {currentVolume.toFixed(1)} <small>kg-unit</small>
+            </span>
           </div>
 
           <div className={styles.fieldGroup}>
@@ -226,7 +389,6 @@ export default function NewWorkoutForms({
               value={recNotes}
               onChange={(e) => setRecNotes(e.target.value)}
               placeholder="今天狀態、感受…"
-              disabled={false}
             />
           </div>
 
